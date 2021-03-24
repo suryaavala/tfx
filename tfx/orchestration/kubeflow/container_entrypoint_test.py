@@ -85,28 +85,29 @@ class MLMDConfigTest(tf.test.TestCase):
     self.assertEqual(ml_metadata_config.host, 'metadata-grpc')
     self.assertEqual(ml_metadata_config.port, 8080)
 
-  def testDumpUiMetadata(self):
-    trainer = Trainer(
-        examples=Channel(type=standard_artifacts.Examples),
-        module_file='module_file',
-        train_args=trainer_pb2.TrainArgs(splits=['train'], num_steps=100),
-        eval_args=trainer_pb2.EvalArgs(splits=['eval'], num_steps=50))
-    model_run = standard_artifacts.ModelRun()
-    model_run.uri = 'model_run_uri'
-    exec_info = data_types.ExecutionInfo(
-        input_dict={},
-        output_dict={'model_run': [model_run]},
-        exec_properties={},
-        execution_id='id')
-    ui_metadata_path = os.path.join(
-        os.environ.get('TEST_UNDECLARED_OUTPUTS_DIR', self.get_temp_dir()),
-        self._testMethodName, 'json')
-    fileio.makedirs(os.path.dirname(ui_metadata_path))
-    container_entrypoint._dump_ui_metadata(trainer, exec_info, ui_metadata_path)
-    with open(ui_metadata_path) as f:
-      ui_metadata = json.load(f)
-      self.assertEqual('tensorboard', ui_metadata['outputs'][-1]['type'])
-      self.assertEqual('model_run_uri', ui_metadata['outputs'][-1]['source'])
+  # def testDumpUiMetadata(self):
+  #   trainer = Trainer(
+  #       examples=Channel(type=standard_artifacts.Examples),
+  #       module_file='module_file',
+  #       train_args=trainer_pb2.TrainArgs(splits=['train'], num_steps=100),
+  #       eval_args=trainer_pb2.EvalArgs(splits=['eval'], num_steps=50))
+  #   model_run = standard_artifacts.ModelRun()
+  #   model_run.uri = 'model_run_uri'
+  #   exec_info = data_types.ExecutionInfo(
+  #       input_dict={},
+  #       output_dict={'model_run': [model_run]},
+  #       exec_properties={},
+  #       execution_id='id')
+  #   ui_metadata_path = os.path.join(
+  #       os.environ.get('TEST_UNDECLARED_OUTPUTS_DIR', self.get_temp_dir()),
+  #       self._testMethodName, 'json')
+  #   fileio.makedirs(os.path.dirname(ui_metadata_path))
+  #   container_entrypoint._dump_ui_metadata(
+  #       trainer, exec_info, ui_metadata_path)
+  #   with open(ui_metadata_path) as f:
+  #     ui_metadata = json.load(f)
+  #     self.assertEqual('tensorboard', ui_metadata['outputs'][-1]['type'])
+  #     self.assertEqual('model_run_uri', ui_metadata['outputs'][-1]['source'])
 
 
 if __name__ == '__main__':

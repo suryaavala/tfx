@@ -59,7 +59,6 @@ def make_pipeline_sdk_required_install_packages():
           nightly='>=0.31.0.dev',
           git_master='@git+https://github.com/google/ml-metadata@master'),
       'packaging>=20,<21',
-      'portpicker>=1.3.1,<2',
       'protobuf>=3.12.2,<4',
       'docker>=4.1,<5',
       # TODO(b/176812386): Deprecate usage of jinja2 for placeholders.
@@ -71,7 +70,7 @@ def make_required_install_packages():
   # Make sure to sync the versions of common dependencies (absl-py, numpy,
   # and protobuf) with TF.
   return make_pipeline_sdk_required_install_packages() + [
-      'apache-beam[gcp]>=2.29,<3',
+      'apache-beam[gcp]>=2.28,<3',
       'attrs>=19.3.0,<21',
       'click>=7,<8',
       'google-api-python-client>=1.7.8,<2',
@@ -85,9 +84,10 @@ def make_required_install_packages():
       # TODO(b/179195488): remove numpy dependency after 1.20 migration.
       # This dependency was added only to limit numpy 1.20 installation.
       'numpy>=1.16,<1.20',
+      'portpicker>=1.3.1,<2',
       'pyarrow>=1,<3',
       'pyyaml>=3.12,<6',
-      'tensorflow>=1.15.2,!=2.0.*,!=2.1.*,!=2.2.*,!=2.3.*,!=2.4.*,<3',
+      'tensorflow>=1.15.2,!=2.0.*,!=2.1.*,!=2.2.*,!=2.3.*,<3',
       'tensorflow-hub>=0.9.0,<0.10',
       'tensorflow-data-validation' + select_constraint(
           default='>=0.30,<0.31',
@@ -99,7 +99,7 @@ def make_required_install_packages():
           nightly='>=0.31.0.dev',
           git_master='@git+https://github.com/tensorflow/model-analysis@master'
       ),
-      'tensorflow-serving-api>=1.15,!=2.0.*,!=2.1.*,!=2.2.*,!=2.3.*,!=2.4.*,<3',
+      'tensorflow-serving-api>=1.15,!=2.0.*,!=2.1.*,!=2.2.*,!=2.3.*,<3',
       'tensorflow-transform' + select_constraint(
           default='>=0.30,<0.31',
           nightly='>=0.31.0.dev',
@@ -150,7 +150,7 @@ def make_extra_packages_docker_image():
 def make_extra_packages_tfjs():
   # Packages needed for tfjs.
   return [
-      'tensorflowjs>=3.6.0,<4',
+      'tensorflowjs>=2.0.1.post1,<3',
   ]
 
 

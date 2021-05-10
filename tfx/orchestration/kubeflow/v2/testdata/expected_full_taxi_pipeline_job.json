@@ -403,9 +403,6 @@
             "module_file": {
               "type": "STRING"
             },
-            "compute_statistics": {
-              "type": "INT"
-            },
             "custom_config": {
               "type": "STRING"
             },
@@ -565,13 +562,6 @@
                     }
                   }
                 },
-                "compute_statistics": {
-                  "runtimeValue": {
-                    "constantValue": {
-                      "intValue": "0"
-                    }
-                  }
-                },
                 "custom_config": {
                   "runtimeValue": {
                     "constantValue": {
@@ -582,7 +572,7 @@
                 "force_tf_compat_v1": {
                   "runtimeValue": {
                     "constantValue": {
-                      "intValue": "0"
+                      "intValue": "1"
                     }
                   }
                 }

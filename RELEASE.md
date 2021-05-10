@@ -8,20 +8,15 @@
 
 ### For Component Authors
 
-* Apache Beam support is migrated from TFX Base Components and Executors to
-  dedicated Beam Components and Executors. `BaseExecutor` will no longer embed
-  `beam_pipeline_args`. Custom executors for Beam powered components should now
-  extend BaseBeamExecutor instead of BaseExecutor.
-
 ## Deprecations
+
+*  `LatestArtifactsResolver`, `LatestBlessedModelResolver`, `SpansResolver`
+   are renamed to `LatestArtifactStrategy`, `LatestBlessedModelStrategy`,
+   `SpanRangeStrategy` respectively.
 
 ## Bug Fixes and Other Changes
 
-*   Removed `six` dependency.
-*   Depends on `apache-beam[gcp]>=2.29,<3`.
-*   Depends on `tensorflow>=1.15.2,!=2.0.*,!=2.1.*,!=2.2.*,!=2.3.*,!=2.4.*,<3`.
-*   Depends on `tensorflowjs>=3.6.0,<4`.
-*   Depends on `tensorflow-serving-api>=1.15,!=2.0.*,!=2.1.*,!=2.2.*,!=2.3.*,!=2.4.*,<3`.
+*  Removed `six` dependency.
 
 ## Documentation Updates
 
@@ -52,12 +47,6 @@
    Transform, Trainer and Tuner components is now packaged as a pip wheel for
    execution. For Evaluator and Transform, these wheel packages are now
    installed on remote Apache Beam workers.
-*  TFT can now compute pre-transform and post-transform statistics. This can
-   be enabled by setting `compute_statistics=True` in the Transform component.
-   By default, statistics are not computed in Transform (as before). When
-   enabled, the pre-transform and post-transform stats will be stored in the
-   `pre_transform_feature_stats/` and `post_transform_feature_stats/` subfolders
-   of the `transform_graph` export.
 
 ## Breaking Changes
 
@@ -102,9 +91,6 @@
 *  Deleted all usages of instance_name, which was deprecated in version 0.25.0.
    Please use .with_id() method of components.
 *  Removed output channel overwrite functionality from all official components.
-*  Transform will use the native TF2 implementation of tf.transform unless TF2
-   behaviors are explicitly disabled. The previous behaviour can still be
-   obtained by setting `force_tf_compat_v1=True`.
 
 ### For Component Authors
 
@@ -114,9 +100,6 @@
 
 *   RuntimeParameter usage for `module_file` and user-defined function paths is
     marked experimental.
-*  `LatestArtifactsResolver`, `LatestBlessedModelResolver`, `SpansResolver`
-   are renamed to `LatestArtifactStrategy`, `LatestBlessedModelStrategy`,
-   `SpanRangeStrategy` respectively.
 
 ## Bug Fixes and Other Changes
 

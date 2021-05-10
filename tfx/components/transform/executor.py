@@ -30,6 +30,7 @@ import tensorflow as tf
 import tensorflow_data_validation as tfdv
 import tensorflow_transform as tft
 from tensorflow_transform import impl_helper
+from tensorflow_transform import tf2_utils
 import tensorflow_transform.beam as tft_beam
 from tensorflow_transform.beam import analyzer_cache
 from tensorflow_transform.beam import common as tft_beam_common
@@ -50,6 +51,7 @@ from tfx.proto import transform_pb2
 from tfx.types import artifact_utils
 from tfx.types import standard_artifacts
 from tfx.types import standard_component_specs
+from tfx.utils import import_utils
 from tfx.utils import io_utils
 from tfx.utils import json_utils
 from tfx.utils import proto_utils
@@ -322,8 +324,6 @@ class Executor(base_beam_executor.BaseBeamExecutor):
           all splits. If splits_config is set, analyze cannot be empty.
         - force_tf_compat_v1: Whether to use TF in compat.v1 mode
           irrespective of installed/enabled TF behaviors.
-        - compute_statistics: Whether to compute pre-transform and
-          post-transform statistics.
 
     Returns:
       None
@@ -423,10 +423,15 @@ class Executor(base_beam_executor.BaseBeamExecutor):
         return artifact_utils.get_single_uri(params_dict[label])
 
     force_tf_compat_v1 = bool(
-        exec_properties.get(standard_component_specs.FORCE_TF_COMPAT_V1_KEY, 0))
-
-    compute_statistics = bool(
-        exec_properties.get(standard_component_specs.COMPUTE_STATISTICS_KEY, 0))
+        exec_properties.get(standard_component_specs.FORCE_TF_COMPAT_V1_KEY, 1))
+    if force_tf_compat_v1 and not tf2_utils.use_tf_compat_v1(False):
+      absl.logging.warning(
+          'The default value of `force_tf_compat_v1` will change in a future '
+          'release from `True` to `False`. Since this pipeline has TF 2 '
+          'behaviors enabled, Transform will use native TF 2 at that point. You'
+          ' can test this behavior now by passing `force_tf_compat_v1=False` '
+          'or disable it by explicitly setting `force_tf_compat_v1=True` in '
+          'the Transform component.')
 
     # Make sure user packages get propagated to the remote Beam worker.
     user_module_key = exec_properties.get(
@@ -440,7 +445,7 @@ class Executor(base_beam_executor.BaseBeamExecutor):
 
     label_inputs = {
         labels.COMPUTE_STATISTICS_LABEL:
-            compute_statistics,
+            False,
         labels.SCHEMA_PATH_LABEL:
             schema_file,
         labels.EXAMPLES_DATA_FORMAT_LABEL:
@@ -838,29 +843,20 @@ class Executor(base_beam_executor.BaseBeamExecutor):
     """
     has_module_file = bool(
         value_utils.GetSoleValue(inputs, labels.MODULE_FILE, strict=False))
-    has_module_path = bool(
-        value_utils.GetSoleValue(inputs, labels.MODULE_PATH, strict=False))
 
-    if has_module_file and has_module_path:
-      raise ValueError(
-          'At most one of MODULE_FILE or MODULE_PATH should be '
-          'supplied in inputs.')
+    fn = None
+    if has_module_file:
+      # Users do not have to define a stats_options_updater_fn. Return None if
+      # they do not.
+      try:
+        fn = import_utils.import_func_from_source(
+            value_utils.GetSoleValue(inputs, labels.MODULE_FILE),
+            'stats_options_updater_fn')
+        fn = self._MaybeBindCustomConfig(inputs, fn)
+      except AttributeError:
+        return None
 
-    if not has_module_file and not has_module_path:
-      return None
-
-    fn = udf_utils.try_get_fn(
-        {
-            standard_component_specs.MODULE_FILE_KEY:
-                value_utils.GetSoleValue(
-                    inputs, labels.MODULE_FILE, strict=False),
-            standard_component_specs.MODULE_PATH_KEY:
-                value_utils.GetSoleValue(
-                    inputs, labels.MODULE_PATH, strict=False),
-        }, standard_component_specs.STATS_OPTIONS_UPDATER_FN_KEY)
-    if fn is None:
-      return fn
-    return self._MaybeBindCustomConfig(inputs, fn)
+    return fn
 
   # TODO(b/122478841): Refine this API in following cls.
   # Note: This API is up to change.

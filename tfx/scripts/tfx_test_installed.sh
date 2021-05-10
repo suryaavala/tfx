@@ -63,7 +63,6 @@ SKIP_LIST=(
   # Skip tests which require additional packages.
   'tfx/examples/custom_components/*'
   'tfx/examples/chicago_taxi_pipeline/taxi_pipeline_simple_test.py'
-  'tfx/examples/penguin/experimental/penguin_pipeline_sklearn_gcp_test.py'
   'tfx/examples/ranking/*'
   'tfx/*airflow*'
   'tfx/*kubeflow*'
@@ -129,11 +128,6 @@ fi
 # TODO(b/182435431): Delete the following test after the hanging issue resolved.
 SKIP_LIST+=(
   "tfx/experimental/distributed_inference/graphdef_experiments/subgraph_partitioning/beam_pipeline_test.py"
-)
-
-# TODO(b/188223200): Add back following test for TFX 1.0 and later.
-SKIP_LIST+=(
-  "tfx/tools/cli/commands/pipeline_test.py"
 )
 
 # TODO(b/154871293): Migrate to pytest after fixing pytest issues.

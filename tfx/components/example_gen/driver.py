@@ -1,3 +1,4 @@
+# Lint as: python2, python3
 # Copyright 2019 Google LLC. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -52,10 +53,9 @@ def update_output_artifact(
     exec_properties: execution properties passed to the example gen.
     output_artifact: the example artifact to be output.
   """
-  if exec_properties.get(utils.FINGERPRINT_PROPERTY_NAME):
-    output_artifact.custom_properties[
-        utils.FINGERPRINT_PROPERTY_NAME].string_value = (
-            exec_properties[utils.FINGERPRINT_PROPERTY_NAME])
+  output_artifact.custom_properties[
+      utils.FINGERPRINT_PROPERTY_NAME].string_value = str(
+          exec_properties[utils.FINGERPRINT_PROPERTY_NAME])
   output_artifact.custom_properties[
       utils.SPAN_PROPERTY_NAME].int_value = exec_properties[
           utils.SPAN_PROPERTY_NAME]

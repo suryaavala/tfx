@@ -1,3 +1,4 @@
+# Lint as: python3
 # Copyright 2020 Google LLC. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -24,10 +25,12 @@ from tensorflow import keras
 import tensorflow_transform as tft
 from tensorflow_transform.tf_metadata import schema_utils
 
-from tfx import v1 as tfx
+from tfx.components.trainer.executor import TrainerFnArgs
+from tfx.components.trainer.fn_args_utils import DataAccessor
 from tfx.experimental.templates.penguin.models import constants
 from tfx.experimental.templates.penguin.models import features
-from tfx_bsl.public import tfxio
+from tfx.utils import io_utils
+from tfx_bsl.tfxio import dataset_options
 
 from tensorflow_metadata.proto.v0 import schema_pb2
 
@@ -61,7 +64,7 @@ def _get_serve_tf_examples_fn(model, schema, tf_transform_output):
 
 
 def _input_fn(file_pattern: List[Text],
-              data_accessor: tfx.components.DataAccessor,
+              data_accessor: DataAccessor,
               schema: schema_pb2.Schema,
               label: Text,
               batch_size: int = 200) -> tf.data.Dataset:
@@ -81,8 +84,8 @@ def _input_fn(file_pattern: List[Text],
   """
   return data_accessor.tf_dataset_factory(
       file_pattern,
-      tfxio.TensorFlowDatasetOptions(batch_size=batch_size, label_key=label),
-      schema).repeat()
+      dataset_options.TensorFlowDatasetOptions(
+          batch_size=batch_size, label_key=label), schema).repeat()
 
 
 def _build_keras_model(feature_list: List[Text]) -> tf.keras.Model:
@@ -116,7 +119,7 @@ def _build_keras_model(feature_list: List[Text]) -> tf.keras.Model:
 
 # TFX Trainer will call this function.
 # TODO(step 4): Construct, train and save your model in this function.
-def run_fn(fn_args: tfx.components.FnArgs):
+def run_fn(fn_args: TrainerFnArgs):
   """Train the model based on given args.
 
   Args:
@@ -124,8 +127,7 @@ def run_fn(fn_args: tfx.components.FnArgs):
   """
   if fn_args.transform_output is None:  # Transform is not used.
     tf_transform_output = None
-    schema = tfx.utils.parse_pbtxt_file(fn_args.schema_file,
-                                        schema_pb2.Schema())
+    schema = io_utils.parse_pbtxt_file(fn_args.schema_file, schema_pb2.Schema())
     feature_list = features.FEATURE_KEYS
     label_key = features.LABEL_KEY
   else:

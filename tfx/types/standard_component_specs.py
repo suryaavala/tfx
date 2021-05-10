@@ -91,13 +91,11 @@ HYPERPARAMETERS_KEY = 'hyperparameters'
 MODEL_RUN_KEY = 'model_run'
 # Key for transform
 PREPROCESSING_FN_KEY = 'preprocessing_fn'
-STATS_OPTIONS_UPDATER_FN_KEY = 'stats_options_updater_fn'
 FORCE_TF_COMPAT_V1_KEY = 'force_tf_compat_v1'
 SPLITS_CONFIG_KEY = 'splits_config'
 ANALYZER_CACHE_KEY = 'analyzer_cache'
 TRANSFORMED_EXAMPLES_KEY = 'transformed_examples'
 UPDATED_ANALYZER_CACHE_KEY = 'updated_analyzer_cache'
-COMPUTE_STATISTICS_KEY = 'compute_statistics'
 
 
 class BulkInferrerSpec(ComponentSpec):
@@ -399,8 +397,6 @@ class TransformSpec(ComponentSpec):
           ExecutionParameter(type=str, optional=True),
       SPLITS_CONFIG_KEY:
           ExecutionParameter(type=transform_pb2.SplitsConfig, optional=True),
-      COMPUTE_STATISTICS_KEY:
-          ExecutionParameter(type=int, optional=True),
   }
   INPUTS = {
       EXAMPLES_KEY:

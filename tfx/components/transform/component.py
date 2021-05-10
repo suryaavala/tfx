@@ -85,9 +85,8 @@ class Transform(base_beam_component.BaseBeamComponent):
       analyzer_cache: Optional[types.Channel] = None,
       materialize: bool = True,
       disable_analyzer_cache: bool = False,
-      force_tf_compat_v1: bool = False,
-      custom_config: Optional[Dict[Text, Any]] = None,
-      compute_statistics: bool = False):
+      force_tf_compat_v1: bool = True,
+      custom_config: Optional[Dict[Text, Any]] = None):
     """Construct a Transform component.
 
     Args:
@@ -134,13 +133,12 @@ class Transform(base_beam_component.BaseBeamComponent):
       disable_analyzer_cache: If False, Transform will use input cache if
         provided and write cache output. If True, `analyzer_cache` must not be
         provided.
-      force_tf_compat_v1: (Optional) If True and/or TF2 behaviors are disabled
-        Transform will use Tensorflow in compat.v1 mode irrespective of
-        installed version of Tensorflow. Defaults to `False`.
+      force_tf_compat_v1: (Optional) If True, Transform will use Tensorflow in
+        compat.v1 mode irrespective of installed version of Tensorflow. Defaults
+        to `True`. Note: The default value will be switched to `False` in a
+        future release.
       custom_config: A dict which contains additional parameters that will be
         passed to preprocessing_fn.
-      compute_statistics: If True, invoke TFDV to compute pre-transform and
-        post-transform statistics.
 
     Raises:
       ValueError: When both or neither of 'module_file' and 'preprocessing_fn'
@@ -177,8 +175,7 @@ class Transform(base_beam_component.BaseBeamComponent):
         transformed_examples=transformed_examples,
         analyzer_cache=analyzer_cache,
         updated_analyzer_cache=updated_analyzer_cache,
-        custom_config=json_utils.dumps(custom_config),
-        compute_statistics=int(compute_statistics))
+        custom_config=json_utils.dumps(custom_config))
     super(Transform, self).__init__(spec=spec)
 
     if udf_utils.should_package_user_modules():

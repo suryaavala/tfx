@@ -16,10 +16,10 @@
 import base64
 from typing import List, Optional
 
+from absl import logging
 from tfx import types
 from tfx.orchestration import data_types_utils
 from tfx.orchestration import metadata
-from tfx.orchestration.experimental.core import mlmd_state
 from tfx.orchestration.experimental.core import task as task_lib
 from tfx.orchestration.portable.mlmd import context_lib
 from tfx.orchestration.portable.mlmd import execution_lib
@@ -43,35 +43,21 @@ _ORCHESTRATOR_EXECUTION_TYPE = metadata_store_pb2.ExecutionType(
 
 
 class PipelineState:
-  """Class for dealing with pipeline state. Can be used as a context manager.
+  """Class for dealing with pipeline state. Can be used as a context manager."""
 
-  Methods must be invoked inside the pipeline state context for thread safety
-  and ensuring that in-memory state is kept in sync with corresponding state in
-  MLMD. If the underlying pipeline execution is mutated, it is automatically
-  committed when exiting the context so no separate commit operation is needed.
-
-  Attributes:
-    mlmd_handle: Handle to MLMD db.
-    pipeline: The pipeline proto associated with this `PipelineState` object.
-    execution_id: Id of the underlying execution in MLMD.
-    pipeline_uid: Unique id of the pipeline.
-    execution: The underlying MLMD execution proto. Must be accessed only within
-      pipeline state context. `RuntimeError` is raised otherwise. Any mutations
-      made within the context will be committed to MLMD while exiting the
-      context.
-  """
-
-  def __init__(self, mlmd_handle: metadata.Metadata,
-               pipeline: pipeline_pb2.Pipeline, execution_id: int):
+  def __init__(self,
+               mlmd_handle: metadata.Metadata,
+               pipeline_uid: task_lib.PipelineUid,
+               context: metadata_store_pb2.Context,
+               execution: metadata_store_pb2.Execution,
+               commit: bool = False):
     """Constructor. Use one of the factory methods to initialize."""
     self.mlmd_handle = mlmd_handle
-    self.pipeline = pipeline
-    self.execution_id = execution_id
-    self.pipeline_uid = task_lib.PipelineUid.from_pipeline(pipeline)
-
-    # Only set within the pipeline state context.
-    self._mlmd_execution_atomic_op_context = None
-    self._execution = None
+    self.pipeline_uid = pipeline_uid
+    self.context = context
+    self.execution = execution
+    self._commit = commit
+    self._pipeline = None  # lazily set
 
   @classmethod
   def new(cls, mlmd_handle: metadata.Metadata,
@@ -117,10 +103,12 @@ class PipelineState:
           execution.custom_properties[_PIPELINE_RUN_ID],
           pipeline.runtime_spec.pipeline_run_id.field_value.string_value)
 
-    execution = execution_lib.put_execution(mlmd_handle, execution, [context])
-
     return cls(
-        mlmd_handle=mlmd_handle, pipeline=pipeline, execution_id=execution.id)
+        mlmd_handle=mlmd_handle,
+        pipeline_uid=pipeline_uid,
+        context=context,
+        execution=execution,
+        commit=True)
 
   @classmethod
   def load(cls, mlmd_handle: metadata.Metadata,
@@ -169,35 +157,36 @@ class PipelineState:
     pipeline_uid = pipeline_uid_from_orchestrator_context(context)
     active_execution = _get_active_execution(
         pipeline_uid, mlmd_handle.store.get_executions_by_context(context.id))
-    pipeline = _get_pipeline_from_orchestrator_execution(active_execution)
 
     return cls(
         mlmd_handle=mlmd_handle,
-        pipeline=pipeline,
-        execution_id=active_execution.id)
+        pipeline_uid=pipeline_uid,
+        context=context,
+        execution=active_execution,
+        commit=False)
 
   @property
-  def execution(self) -> metadata_store_pb2.Execution:
-    self._check_context()
-    return self._execution
+  def pipeline(self) -> pipeline_pb2.Pipeline:
+    if not self._pipeline:
+      self._pipeline = _get_pipeline_from_orchestrator_execution(self.execution)
+    return self._pipeline
 
   def initiate_stop(self, status: status_lib.Status) -> None:
     """Updates pipeline state to signal stopping pipeline execution."""
-    self._check_context()
     data_types_utils.set_metadata_value(
-        self._execution.custom_properties[_STOP_INITIATED], 1)
+        self.execution.custom_properties[_STOP_INITIATED], 1)
     data_types_utils.set_metadata_value(
-        self._execution.custom_properties[_PIPELINE_STATUS_CODE],
+        self.execution.custom_properties[_PIPELINE_STATUS_CODE],
         int(status.code))
     if status.message:
       data_types_utils.set_metadata_value(
-          self._execution.custom_properties[_PIPELINE_STATUS_MSG],
+          self.execution.custom_properties[_PIPELINE_STATUS_MSG],
           status.message)
+    self._commit = True
 
   def stop_initiated_reason(self) -> Optional[status_lib.Status]:
     """Returns status object if stop initiated, `None` otherwise."""
-    self._check_context()
-    custom_properties = self._execution.custom_properties
+    custom_properties = self.execution.custom_properties
     if _get_metadata_value(custom_properties.get(_STOP_INITIATED)) == 1:
       code = _get_metadata_value(custom_properties.get(_PIPELINE_STATUS_CODE))
       if code is None:
@@ -209,7 +198,6 @@ class PipelineState:
 
   def initiate_node_start(self, node_uid: task_lib.NodeUid) -> None:
     """Updates pipeline state to signal that a node should be started."""
-    self._check_context()
     if self.pipeline.execution_mode != pipeline_pb2.Pipeline.ASYNC:
       raise status_lib.StatusNotOkError(
           code=status_lib.Code.UNIMPLEMENTED,
@@ -219,17 +207,17 @@ class PipelineState:
           code=status_lib.Code.INVALID_ARGUMENT,
           message=(f'Node given by uid {node_uid} does not belong to pipeline '
                    f'given by uid {self.pipeline_uid}'))
-    if self._execution.custom_properties.pop(
+    if self.execution.custom_properties.pop(
         _node_stop_initiated_property(node_uid), None) is not None:
-      self._execution.custom_properties.pop(
+      self.execution.custom_properties.pop(
           _node_status_code_property(node_uid), None)
-      self._execution.custom_properties.pop(
+      self.execution.custom_properties.pop(
           _node_status_msg_property(node_uid), None)
+      self._commit = True
 
   def initiate_node_stop(self, node_uid: task_lib.NodeUid,
                          status: status_lib.Status) -> None:
     """Updates pipeline state to signal that a node should be stopped."""
-    self._check_context()
     if self.pipeline.execution_mode != pipeline_pb2.Pipeline.ASYNC:
       raise status_lib.StatusNotOkError(
           code=status_lib.Code.UNIMPLEMENTED,
@@ -240,25 +228,25 @@ class PipelineState:
           message=(f'Node given by uid {node_uid} does not belong to pipeline '
                    f'given by uid {self.pipeline_uid}'))
     data_types_utils.set_metadata_value(
-        self._execution.custom_properties[_node_stop_initiated_property(
+        self.execution.custom_properties[_node_stop_initiated_property(
             node_uid)], 1)
     data_types_utils.set_metadata_value(
-        self._execution.custom_properties[_node_status_code_property(node_uid)],
+        self.execution.custom_properties[_node_status_code_property(node_uid)],
         int(status.code))
     if status.message:
       data_types_utils.set_metadata_value(
-          self._execution.custom_properties[_node_status_msg_property(
-              node_uid)], status.message)
+          self.execution.custom_properties[_node_status_msg_property(node_uid)],
+          status.message)
+    self._commit = True
 
   def node_stop_initiated_reason(
       self, node_uid: task_lib.NodeUid) -> Optional[status_lib.Status]:
     """Returns status object if node stop initiated, `None` otherwise."""
-    self._check_context()
     if node_uid.pipeline_uid != self.pipeline_uid:
       raise RuntimeError(
           f'Node given by uid {node_uid} does not belong to pipeline given '
           f'by uid {self.pipeline_uid}')
-    custom_properties = self._execution.custom_properties
+    custom_properties = self.execution.custom_properties
     if _get_metadata_value(
         custom_properties.get(_node_stop_initiated_property(node_uid))) == 1:
       code = _get_metadata_value(
@@ -272,39 +260,35 @@ class PipelineState:
       return None
 
   def update_pipeline_execution_state(self, status: status_lib.Status) -> None:
-    self._check_context()
-    self._execution.last_known_state = _mlmd_execution_code(status)
+    self.execution.last_known_state = _mlmd_execution_code(status)
+    self._commit = True
 
   def save_property(self, property_key: str, property_value: str) -> None:
     """Saves a custom property to the pipeline execution."""
-    self._check_context()
-    self._execution.custom_properties[
-        property_key].string_value = property_value
+    self.execution.custom_properties[property_key].string_value = property_value
+    self._commit = True
 
   def remove_property(self, property_key: str) -> None:
     """Removes a custom property of the pipeline execution if exists."""
-    self._check_context()
-    if self._execution.custom_properties.get(property_key):
-      del self._execution.custom_properties[property_key]
+    if self.execution.custom_properties.get(property_key):
+      del self.execution.custom_properties[property_key]
+    self._commit = True
+
+  def commit(self) -> None:
+    """Commits pipeline state to MLMD if there are any mutations."""
+    if self._commit:
+      self.execution = execution_lib.put_execution(self.mlmd_handle,
+                                                   self.execution,
+                                                   [self.context])
+      logging.info('Committed execution (id: %s) for pipeline with uid: %s',
+                   self.execution.id, self.pipeline_uid)
+    self._commit = False
 
   def __enter__(self) -> 'PipelineState':
-    mlmd_execution_atomic_op_context = mlmd_state.mlmd_execution_atomic_op(
-        self.mlmd_handle, self.execution_id)
-    execution = mlmd_execution_atomic_op_context.__enter__()
-    self._mlmd_execution_atomic_op_context = mlmd_execution_atomic_op_context
-    self._execution = execution
     return self
 
   def __exit__(self, exc_type, exc_val, exc_tb):
-    mlmd_execution_atomic_op_context = self._mlmd_execution_atomic_op_context
-    self._mlmd_execution_atomic_op_context = None
-    self._execution = None
-    mlmd_execution_atomic_op_context.__exit__(exc_type, exc_val, exc_tb)
-
-  def _check_context(self) -> None:
-    if self._execution is None:
-      raise RuntimeError(
-          'Operation must be performed within the pipeline state context.')
+    self.commit()
 
 
 class PipelineView:

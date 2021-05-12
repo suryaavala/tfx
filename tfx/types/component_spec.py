@@ -1,3 +1,4 @@
+# Lint as: python2, python3
 # Copyright 2019 Google LLC. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,10 +14,14 @@
 # limitations under the License.
 """ComponentSpec for defining inputs/outputs/properties of TFX components."""
 
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+
 import copy
 import inspect
 import itertools
-from typing import Any, Dict, List, Optional, Type
+from typing import Any, Dict, List, Optional, Text, Type
 
 from tfx.types.artifact import Artifact
 from tfx.types.channel import Channel
@@ -53,7 +58,7 @@ def _make_default(data: Any) -> Any:
   return data
 
 
-def _put_default_dict(dict_data: Dict[str, Any]) -> None:
+def _put_default_dict(dict_data: Dict[Text, Any]) -> None:
   """Helper function to replace RuntimeParameter with its default value."""
   for k, v in dict_data.items():
     if isinstance(v, dict):
@@ -244,7 +249,7 @@ class ComponentSpec(json_utils.Jsonable):
         outputs,
         compat_aliases=getattr(self, '_OUTPUT_COMPATIBILITY_ALIASES', None))
 
-  def to_json_dict(self) -> Dict[str, Any]:
+  def to_json_dict(self) -> Dict[Text, Any]:
     """Convert from an object to a JSON serializable dictionary."""
     return {
         'inputs': self.inputs,
@@ -253,7 +258,7 @@ class ComponentSpec(json_utils.Jsonable):
     }
 
 
-class _ComponentParameter:
+class _ComponentParameter(object):
   """An abstract parameter that forms a part of a ComponentSpec.
 
   Properties:
@@ -288,7 +293,7 @@ class ExecutionParameter(_ComponentParameter):
     return (isinstance(other.__class__, self.__class__) and
             other.type == self.type and other.optional == self.optional)
 
-  def type_check(self, arg_name: str, value: Any):
+  def type_check(self, arg_name: Text, value: Any):
     """Perform type check to the parameter passed in."""
 
     # Following helper function is needed due to the lack of subscripted
@@ -381,7 +386,7 @@ class ChannelParameter(_ComponentParameter):
     return (isinstance(other.__class__, self.__class__) and
             other.type == self.type and other.optional == self.optional)
 
-  def type_check(self, arg_name: str, value: Channel):
+  def type_check(self, arg_name: Text, value: Channel):
     if not isinstance(value, Channel) or value.type != self.type:
       raise TypeError('Argument %s should be a Channel of type %r (got %s).' %
                       (arg_name, self.type, value))

@@ -1,3 +1,4 @@
+# Lint as: python2, python3
 # Copyright 2020 Google LLC. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -33,12 +34,16 @@ TensorFlow Serving also requires the version segment to be an integer (mostly
 a unix timestamp) to track the latest model easily.
 """
 
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+
 import os
-from typing import Optional, Tuple
+from typing import Optional, Text, Tuple
 
 
-def make_model_path(model_base_path: str, model_name: str,
-                    version: int) -> str:
+def make_model_path(model_base_path: Text, model_name: Text,
+                    version: int) -> Text:
   """Make a TFS-flavored model path.
 
   Args:
@@ -53,8 +58,8 @@ def make_model_path(model_base_path: str, model_name: str,
 
 
 def parse_model_path(
-    model_path: str,
-    expected_model_name: Optional[str] = None) -> Tuple[str, str, int]:
+    model_path: Text,
+    expected_model_name: Optional[Text] = None) -> Tuple[Text, Text, int]:
   """Parse model_path into parts of TFS flavor.
 
   Args:
@@ -83,7 +88,7 @@ def parse_model_path(
   return model_base_path, model_name, version
 
 
-def parse_model_base_path(model_path: str) -> str:
+def parse_model_base_path(model_path: Text) -> Text:
   """Parse model_base_path from the TFS-flavored model path.
 
   Args:

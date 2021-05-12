@@ -149,7 +149,7 @@ def prepare_contexts(
   """
 
   return [
-      _generate_context_proto(
+      _register_context_if_not_exist(
           metadata_handler=metadata_handler, context_spec=context_spec)
       for context_spec in node_contexts.contexts
   ]

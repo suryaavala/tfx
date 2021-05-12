@@ -1,3 +1,4 @@
+# Lint as: python2, python3
 # Copyright 2019 Google LLC. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,6 +14,10 @@
 # limitations under the License.
 """Tests for tfx.utils.logging_utils."""
 
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+
 import logging
 import os
 
@@ -24,7 +29,7 @@ from tfx.utils import logging_utils
 class LoggingUtilsTest(tf.test.TestCase):
 
   def setUp(self):
-    super().setUp()
+    super(LoggingUtilsTest, self).setUp()
     self._log_root = os.path.join(self.get_temp_dir(), 'log_dir')
     self._logger_config = logging_utils.LoggerConfig(log_root=self._log_root)
 
@@ -34,7 +39,7 @@ class LoggingUtilsTest(tf.test.TestCase):
     logger.info('Test')
     log_file_path = os.path.join(self._log_root)
     f = fileio.open(os.path.join(log_file_path, 'tfx.log'), mode='r')
-    self.assertRegex(
+    self.assertRegexpMatches(
         f.read(),
         r'^\d\d\d\d-\d\d-\d\d \d\d:\d\d:\d\d,\d\d\d - : \(logging_utils_test.py:\d\d\) - INFO: Test$'
     )

@@ -51,7 +51,6 @@ def create_container_component(
 
   Example:
 
-  ```
     component = create_container_component(
         name='TrainModel',
         inputs={
@@ -71,7 +70,6 @@ def create_container_component(
             '--num_training-steps', InputValuePlaceholder('num_training_steps'),
         ]
     )
-  ```
   """
   if not name:
     raise ValueError('Component name cannot be empty.')

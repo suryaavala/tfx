@@ -92,10 +92,10 @@ class DependencyUtilsTest(test_case_utils.TfxTest):
 
   def testDeprecationClass(self):
 
-    class MyClass1:
+    class MyClass1(object):
       __init__ = mock.MagicMock()
 
-    class MyClass2:
+    class MyClass2(object):
       __init__ = mock.MagicMock()
 
     # By default, we warn once across all calls.

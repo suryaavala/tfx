@@ -13,7 +13,11 @@
 # limitations under the License.
 """Utilities for topological sort."""
 
-from typing import Callable, List, Sequence, TypeVar
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+
+from typing import Callable, List, Sequence, Text, TypeVar
 
 NodeT = TypeVar('NodeT')
 
@@ -23,7 +27,7 @@ class InvalidDAGError(Exception):
 
 
 def topsorted_layers(
-    nodes: Sequence[NodeT], get_node_id_fn: Callable[[NodeT], str],
+    nodes: Sequence[NodeT], get_node_id_fn: Callable[[NodeT], Text],
     get_parent_nodes: Callable[[NodeT], List[NodeT]],
     get_child_nodes: Callable[[NodeT], List[NodeT]]) -> List[List[NodeT]]:
   """Sorts the DAG of nodes in topological order.

@@ -1,3 +1,4 @@
+# Lint as: python2, python3
 # Copyright 2019 Google LLC. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,7 +14,11 @@
 # limitations under the License.
 """Component specifications for the standard set of TFX Components."""
 
-from typing import List
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+
+from typing import List, Text
 
 import tensorflow_model_analysis as tfma
 from tfx.proto import bulk_inferrer_pb2
@@ -143,11 +148,11 @@ class EvaluatorSpec(ComponentSpec):
       FAIRNESS_INDICATOR_THRESHOLDS_KEY:
           ExecutionParameter(type=List[float], optional=True),
       EXAMPLE_SPLITS_KEY:
-          ExecutionParameter(type=str, optional=True),
+          ExecutionParameter(type=(str, Text), optional=True),
       MODULE_FILE_KEY:
-          ExecutionParameter(type=str, optional=True),
+          ExecutionParameter(type=(str, Text), optional=True),
       MODULE_PATH_KEY:
-          ExecutionParameter(type=str, optional=True),
+          ExecutionParameter(type=(str, Text), optional=True),
   }
   INPUTS = {
       EXAMPLES_KEY:
@@ -169,7 +174,7 @@ class ExampleValidatorSpec(ComponentSpec):
   """ExampleValidator component spec."""
 
   PARAMETERS = {
-      EXCLUDE_SPLITS_KEY: ExecutionParameter(type=str, optional=True),
+      EXCLUDE_SPLITS_KEY: ExecutionParameter(type=(str, Text), optional=True),
   }
   INPUTS = {
       STATISTICS_KEY:
@@ -187,7 +192,7 @@ class FileBasedExampleGenSpec(ComponentSpec):
 
   PARAMETERS = {
       INPUT_BASE_KEY:
-          ExecutionParameter(type=str),
+          ExecutionParameter(type=(str, Text)),
       INPUT_CONFIG_KEY:
           ExecutionParameter(type=example_gen_pb2.Input),
       OUTPUT_CONFIG_KEY:
@@ -270,7 +275,7 @@ class PusherSpec(ComponentSpec):
       PUSH_DESTINATION_KEY:
           ExecutionParameter(type=pusher_pb2.PushDestination, optional=True),
       CUSTOM_CONFIG_KEY:
-          ExecutionParameter(type=str, optional=True),
+          ExecutionParameter(type=(str, Text), optional=True),
   }
   INPUTS = {
       MODEL_KEY:
@@ -292,7 +297,7 @@ class SchemaGenSpec(ComponentSpec):
 
   PARAMETERS = {
       'infer_feature_shape': ExecutionParameter(type=int, optional=True),
-      'exclude_splits': ExecutionParameter(type=str, optional=True),
+      'exclude_splits': ExecutionParameter(type=(str, Text), optional=True),
   }
   INPUTS = {
       'statistics': ChannelParameter(type=standard_artifacts.ExampleStatistics),
@@ -307,9 +312,9 @@ class StatisticsGenSpec(ComponentSpec):
 
   PARAMETERS = {
       STATS_OPTIONS_JSON_KEY:
-          ExecutionParameter(type=str, optional=True),
+          ExecutionParameter(type=(str, Text), optional=True),
       EXCLUDE_SPLITS_KEY:
-          ExecutionParameter(type=str, optional=True),
+          ExecutionParameter(type=(str, Text), optional=True),
   }
   INPUTS = {
       EXAMPLES_KEY:
@@ -329,11 +334,11 @@ class TrainerSpec(ComponentSpec):
   PARAMETERS = {
       TRAIN_ARGS_KEY: ExecutionParameter(type=trainer_pb2.TrainArgs),
       EVAL_ARGS_KEY: ExecutionParameter(type=trainer_pb2.EvalArgs),
-      MODULE_FILE_KEY: ExecutionParameter(type=str, optional=True),
-      MODULE_PATH_KEY: ExecutionParameter(type=str, optional=True),
-      RUN_FN_KEY: ExecutionParameter(type=str, optional=True),
-      TRAINER_FN_KEY: ExecutionParameter(type=str, optional=True),
-      CUSTOM_CONFIG_KEY: ExecutionParameter(type=str, optional=True),
+      MODULE_FILE_KEY: ExecutionParameter(type=(str, Text), optional=True),
+      MODULE_PATH_KEY: ExecutionParameter(type=(str, Text), optional=True),
+      RUN_FN_KEY: ExecutionParameter(type=(str, Text), optional=True),
+      TRAINER_FN_KEY: ExecutionParameter(type=(str, Text), optional=True),
+      CUSTOM_CONFIG_KEY: ExecutionParameter(type=(str, Text), optional=True),
   }
   INPUTS = {
       EXAMPLES_KEY:
@@ -359,12 +364,12 @@ class TunerSpec(ComponentSpec):
   """ComponentSpec for TFX Tuner Component."""
 
   PARAMETERS = {
-      MODULE_FILE_KEY: ExecutionParameter(type=str, optional=True),
-      TUNER_FN_KEY: ExecutionParameter(type=str, optional=True),
+      MODULE_FILE_KEY: ExecutionParameter(type=(str, Text), optional=True),
+      TUNER_FN_KEY: ExecutionParameter(type=(str, Text), optional=True),
       TRAIN_ARGS_KEY: ExecutionParameter(type=trainer_pb2.TrainArgs),
       EVAL_ARGS_KEY: ExecutionParameter(type=trainer_pb2.EvalArgs),
       TUNE_ARGS_KEY: ExecutionParameter(type=tuner_pb2.TuneArgs, optional=True),
-      CUSTOM_CONFIG_KEY: ExecutionParameter(type=str, optional=True),
+      CUSTOM_CONFIG_KEY: ExecutionParameter(type=(str, Text), optional=True),
   }
   INPUTS = {
       EXAMPLES_KEY:
@@ -386,15 +391,15 @@ class TransformSpec(ComponentSpec):
 
   PARAMETERS = {
       MODULE_FILE_KEY:
-          ExecutionParameter(type=str, optional=True),
+          ExecutionParameter(type=(str, Text), optional=True),
       MODULE_PATH_KEY:
-          ExecutionParameter(type=str, optional=True),
+          ExecutionParameter(type=(str, Text), optional=True),
       PREPROCESSING_FN_KEY:
-          ExecutionParameter(type=str, optional=True),
+          ExecutionParameter(type=(str, Text), optional=True),
       FORCE_TF_COMPAT_V1_KEY:
           ExecutionParameter(type=int, optional=True),
       CUSTOM_CONFIG_KEY:
-          ExecutionParameter(type=str, optional=True),
+          ExecutionParameter(type=(str, Text), optional=True),
       SPLITS_CONFIG_KEY:
           ExecutionParameter(type=transform_pb2.SplitsConfig, optional=True),
   }

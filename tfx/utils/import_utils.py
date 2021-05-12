@@ -13,16 +13,20 @@
 # limitations under the License.
 """TFX type definition."""
 
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+
 import importlib
 import sys
 import threading
-from typing import Any, Callable, Type
+from typing import Any, Callable, Text, Type
 
 from absl import logging
 from tfx.utils import io_utils
 
 
-def import_class_by_path(class_path: str) -> Type[Any]:
+def import_class_by_path(class_path: Text) -> Type[Any]:
   """Import a class by its <module>.<name> path.
 
   Args:
@@ -37,7 +41,7 @@ def import_class_by_path(class_path: str) -> Type[Any]:
   return getattr(mod, classname)
 
 
-def import_func_from_module(module_path: str, fn_name: str) -> Callable:  # pylint: disable=g-bare-generic
+def import_func_from_module(module_path: Text, fn_name: Text) -> Callable:  # pylint: disable=g-bare-generic
   """Imports a function from a module provided as source file or module path."""
   original_module_path = module_path
   wheel_context_manager = None
@@ -119,7 +123,7 @@ with _imported_modules_from_source_lock:
 
 # TODO(b/175174419): Revisit the workaround for multiple invocations of
 # import_func_from_source.
-def import_func_from_source(source_path: str, fn_name: str) -> Callable:  # pylint: disable=g-bare-generic
+def import_func_from_source(source_path: Text, fn_name: Text) -> Callable:  # pylint: disable=g-bare-generic
   """Imports a function from a module provided as source file."""
 
   # If module path is not local, download to local file-system first,

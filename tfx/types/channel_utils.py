@@ -1,3 +1,4 @@
+# Lint as: python2, python3
 # Copyright 2019 Google LLC. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,7 +14,11 @@
 # limitations under the License.
 """TFX Channel utilities."""
 
-from typing import Dict, Iterable, List
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+
+from typing import Dict, Iterable, List, Text
 
 from tfx.types.artifact import Artifact
 from tfx.types.channel import Channel
@@ -42,7 +47,7 @@ def as_channel(artifacts: Iterable[Artifact]) -> Channel:
 
 
 def unwrap_channel_dict(
-    channel_dict: Dict[str, Channel]) -> Dict[str, List[Artifact]]:
+    channel_dict: Dict[Text, Channel]) -> Dict[Text, List[Artifact]]:
   """Unwrap dict of channels to dict of lists of Artifact.
 
   Args:

@@ -37,6 +37,7 @@ from tfx.proto.orchestration import execution_result_pb2
 from tfx.proto.orchestration import pipeline_pb2
 from tfx.utils import test_case_utils
 
+from ml_metadata.proto import metadata_store_pb2
 from google.protobuf import text_format
 
 _PYTHON_CLASS_EXECUTABLE_SPEC = executable_spec_pb2.PythonClassExecutableSpec
@@ -563,6 +564,11 @@ class LauncherTest(test_case_utils.TfxTest):
               'create_time_since_epoch', 'last_update_time_since_epoch'
           ])
 
+    # Reload context to use a temporary new run id.
+    pipeline_run_context = test_launcher._pipeline_node.contexts.contexts.pop()
+    pipeline_run_context.name.field_value.string_value = 'test_run_1'
+    test_launcher._pipeline_node.contexts.contexts.append(pipeline_run_context)
+
     execution_info = test_launcher.launch()
     with self._mlmd_connection as m:
       artifacts = m.store.get_artifacts_by_type('Model')
@@ -599,6 +605,46 @@ class LauncherTest(test_case_utils.TfxTest):
           ignored_fields=[
               'create_time_since_epoch', 'last_update_time_since_epoch'
           ])
+
+  def testLauncher_ReEntry(self):
+    # Some executors or runtime environment may reschedule the launcher job
+    # before the launcher job can publish any results of the execution to MLMD.
+    # The launcher should reuse the previous execution and proceed to a
+    # successful execution.
+    LauncherTest.fakeUpstreamOutputs(self._mlmd_connection, self._example_gen,
+                                     self._transform)
+    executor_operators = {
+        _PYTHON_CLASS_EXECUTABLE_SPEC: _FakeExecutorOperator
+    }
+    test_launcher = launcher.Launcher(
+        pipeline_node=self._trainer,
+        mlmd_connection=self._mlmd_connection,
+        pipeline_info=self._pipeline_info,
+        pipeline_runtime_spec=self._pipeline_runtime_spec,
+        executor_spec=self._trainer_executor_spec,
+        custom_executor_operators=executor_operators)
+
+    # The first launch simulates the launcher being restarted by preventing the
+    # publishing of any results to MLMD.
+    with mock.patch.object(test_launcher, '_publish_successful_execution'):
+      with mock.patch.object(test_launcher,
+                             '_clean_up_stateless_execution_info'):
+        with mock.patch.object(test_launcher,
+                               '_clean_up_stateful_execution_info'):
+          execution_info = test_launcher.launch()
+
+    with self._mlmd_connection as m:
+      first_execution_id = execution_info.execution_id
+
+    # Second launch should reuse the previous execution.
+    execution_info = test_launcher.launch()
+
+    with self._mlmd_connection as m:
+      self.assertEqual(first_execution_id, execution_info.execution_id)
+      executions = m.store.get_executions_by_id([execution_info.execution_id])
+      self.assertEqual(len(executions), 1)
+      self.assertEqual(executions.pop().last_known_state,
+                       metadata_store_pb2.Execution.COMPLETE)
 
   def testLauncher_ToleratesDoubleCleanup(self):
     # Some executors or runtime environment may delete stateful_working_dir,

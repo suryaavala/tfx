@@ -1,3 +1,4 @@
+# Lint as: python2, python3
 # Copyright 2019 Google LLC. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,12 +14,16 @@
 # limitations under the License.
 """TFX artifact type definition."""
 
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+
 import builtins
 import copy
 import enum
 import importlib
 import json
-from typing import Any, Dict, List, Optional, Type, Union
+from typing import Any, Dict, List, Optional, Text, Type, Union
 
 from absl import logging
 from tfx.utils import doc_controls
@@ -29,7 +34,7 @@ from google.protobuf import json_format
 from ml_metadata.proto import metadata_store_pb2
 
 
-class ArtifactState:
+class ArtifactState(object):
   """Enumeration of possible Artifact states."""
 
   # Indicates that there is a pending execution producing the artifact.
@@ -70,7 +75,7 @@ class PropertyType(enum.Enum):
   JSON_VALUE = 4
 
 
-class Property:
+class Property(object):
   """Property specified for an Artifact."""
   _ALLOWED_MLMD_TYPES = {
       PropertyType.INT: metadata_store_pb2.INT,
@@ -92,7 +97,7 @@ class Property:
     return str(self.type)
 
 
-JsonValueType = Union[Dict, List, int, float, type(None), str]
+JsonValueType = Union[Dict, List, int, float, type(None), Text]
 _JSON_SINGLE_VALUE_KEY = '__value__'
 
 
@@ -215,7 +220,7 @@ class Artifact(json_utils.Jsonable):
   def _get_artifact_type(cls):
     if not getattr(cls, '_MLMD_ARTIFACT_TYPE', None):
       type_name = cls.TYPE_NAME
-      if not (type_name and isinstance(type_name, str)):
+      if not (type_name and isinstance(type_name, (str, Text))):
         raise ValueError(
             ('The Artifact subclass %s must override the TYPE_NAME attribute '
              'with a string type name identifier (got %r instead).') %
@@ -229,7 +234,7 @@ class Artifact(json_utils.Jsonable):
               'Artifact subclass %s.PROPERTIES is not a dictionary.' % cls)
         for key, value in cls.PROPERTIES.items():
           if not (isinstance(key,
-                             (str, bytes)) and isinstance(value, Property)):
+                             (Text, bytes)) and isinstance(value, Property)):
             raise ValueError(
                 ('Artifact subclass %s.PROPERTIES dictionary must have keys of '
                  'type string and values of type artifact.Property.') % cls)
@@ -240,7 +245,7 @@ class Artifact(json_utils.Jsonable):
       cls._MLMD_ARTIFACT_TYPE = artifact_type
     return copy.deepcopy(cls._MLMD_ARTIFACT_TYPE)
 
-  def __getattr__(self, name: str) -> Any:
+  def __getattr__(self, name: Text) -> Any:
     """Custom __getattr__ to allow access to artifact properties."""
     if name == '_artifact_type':
       # Prevent infinite recursion when used with copy.deepcopy().
@@ -280,7 +285,7 @@ class Artifact(json_utils.Jsonable):
       raise Exception('Unknown MLMD type %r for property %r.' %
                       (property_mlmd_type, name))
 
-  def __setattr__(self, name: str, value: Any):
+  def __setattr__(self, name: Text, value: Any):
     """Custom __setattr__ to allow access to artifact properties."""
     if not self._initialized:
       object.__setattr__(self, name, value)
@@ -299,7 +304,7 @@ class Artifact(json_utils.Jsonable):
                            (name, self))
     property_mlmd_type = self._artifact_type.properties[name]
     if property_mlmd_type == metadata_store_pb2.STRING:
-      if not isinstance(value, (str, bytes)):
+      if not isinstance(value, (Text, bytes)):
         raise Exception(
             'Expected string value for property %r; got %r instead.' %
             (name, value))
@@ -353,7 +358,7 @@ class Artifact(json_utils.Jsonable):
         str(self.mlmd_artifact), str(self._artifact_type))
 
   @doc_controls.do_not_doc_inheritable
-  def to_json_dict(self) -> Dict[str, Any]:
+  def to_json_dict(self) -> Dict[Text, Any]:
     return {
         'artifact':
             json.loads(
@@ -373,7 +378,7 @@ class Artifact(json_utils.Jsonable):
 
   @classmethod
   @doc_controls.do_not_doc_inheritable
-  def from_json_dict(cls, dict_data: Dict[str, Any]) -> Any:
+  def from_json_dict(cls, dict_data: Dict[Text, Any]) -> Any:
     module_name = dict_data['__artifact_class_module__']
     class_name = dict_data['__artifact_class_name__']
     artifact = metadata_store_pb2.Artifact()
@@ -446,12 +451,12 @@ class Artifact(json_utils.Jsonable):
   # Settable properties for all artifact types.
   @property
   @doc_controls.do_not_doc_in_subclasses
-  def uri(self) -> str:
+  def uri(self) -> Text:
     """Artifact URI."""
     return self._artifact.uri
 
   @uri.setter
-  def uri(self, uri: str):
+  def uri(self, uri: Text):
     """Setter for artifact URI."""
     self._artifact.uri = uri
 
@@ -496,14 +501,14 @@ class Artifact(json_utils.Jsonable):
   #   - producer_component: The name of the component that produces the
   #       artifact (in a subsequent change, this information will move to the
   #       associated ML Metadata Event object).
-  def _get_system_property(self, key: str) -> str:
+  def _get_system_property(self, key: Text) -> Text:
     if (key in self._artifact_type.properties and
         key in self._artifact.properties):
       # Legacy artifact types which have explicitly defined system properties.
       return self._artifact.properties[key].string_value
     return self._artifact.custom_properties[key].string_value
 
-  def _set_system_property(self, key: str, value: str):
+  def _set_system_property(self, key: Text, value: Text):
     if (key in self._artifact_type.properties and
         key in self._artifact.properties):
       # Clear non-custom property in legacy artifact types.
@@ -512,85 +517,85 @@ class Artifact(json_utils.Jsonable):
 
   @property
   @doc_controls.do_not_doc_inheritable
-  def name(self) -> str:
+  def name(self) -> Text:
     """Name of the underlying mlmd artifact."""
     return self._get_system_property('name')
 
   @name.setter
-  def name(self, name: str):
+  def name(self, name: Text):
     """Set name of the underlying artifact."""
     self._set_system_property('name', name)
 
   @property
   @doc_controls.do_not_doc_in_subclasses
-  def state(self) -> str:
+  def state(self) -> Text:
     """State of the underlying mlmd artifact."""
     return self._get_system_property('state')
 
   @state.setter
-  def state(self, state: str):
+  def state(self, state: Text):
     """Set state of the underlying artifact."""
     self._set_system_property('state', state)
 
   @property
   @doc_controls.do_not_doc_in_subclasses
-  def pipeline_name(self) -> str:
+  def pipeline_name(self) -> Text:
     """Name of the pipeline that produce the artifact."""
     return self._get_system_property('pipeline_name')
 
   @pipeline_name.setter
-  def pipeline_name(self, pipeline_name: str):
+  def pipeline_name(self, pipeline_name: Text):
     """Set name of the pipeline that produce the artifact."""
     self._set_system_property('pipeline_name', pipeline_name)
 
   @property
   @doc_controls.do_not_doc_inheritable
-  def producer_component(self) -> str:
+  def producer_component(self) -> Text:
     """Producer component of the artifact."""
     return self._get_system_property('producer_component')
 
   @producer_component.setter
-  def producer_component(self, producer_component: str):
+  def producer_component(self, producer_component: Text):
     """Set producer component of the artifact."""
     self._set_system_property('producer_component', producer_component)
 
   # Custom property accessors.
   @doc_controls.do_not_doc_in_subclasses
-  def set_string_custom_property(self, key: str, value: str):
+  def set_string_custom_property(self, key: Text, value: Text):
     """Set a custom property of string type."""
     self._artifact.custom_properties[key].string_value = value
 
   @doc_controls.do_not_doc_in_subclasses
-  def set_int_custom_property(self, key: str, value: int):
+  def set_int_custom_property(self, key: Text, value: int):
     """Set a custom property of int type."""
     self._artifact.custom_properties[key].int_value = builtins.int(value)
 
   @doc_controls.do_not_doc_in_subclasses
-  def set_float_custom_property(self, key: str, value: float):
+  def set_float_custom_property(self, key: Text, value: float):
     """Sets a custom property of float type."""
     self._artifact.custom_properties[key].double_value = builtins.float(value)
 
   @doc_controls.do_not_doc_inheritable
-  def set_json_value_custom_property(self, key: str, value: JsonValueType):
+  def set_json_value_custom_property(self, key: Text, value: JsonValueType):
     """Sets a custom property of float type."""
     self._cached_json_value_custom_properties[key] = value
 
   @doc_controls.do_not_doc_in_subclasses
-  def has_custom_property(self, key: str) -> bool:
+  def has_custom_property(self, key: Text) -> bool:
     return key in self._artifact.custom_properties
 
   @doc_controls.do_not_doc_in_subclasses
-  def get_string_custom_property(self, key: str) -> str:
+  def get_string_custom_property(self, key: Text) -> Text:
     """Get a custom property of string type."""
     if key not in self._artifact.custom_properties:
       return ''
     json_value = self.get_json_value_custom_property(key)
-    if isinstance(json_value, str):
+    if isinstance(json_value, Text):
       return json_value
     return self._artifact.custom_properties[key].string_value
 
   @doc_controls.do_not_doc_in_subclasses
-  def get_int_custom_property(self, key: str) -> int:
+  def get_int_custom_property(self, key: Text) -> int:
     """Get a custom property of int type."""
     if key not in self._artifact.custom_properties:
       return 0
@@ -601,7 +606,7 @@ class Artifact(json_utils.Jsonable):
 
   # TODO(b/179215351): Standardize type name into one of float and double.
   @doc_controls.do_not_doc_in_subclasses
-  def get_float_custom_property(self, key: str) -> float:
+  def get_float_custom_property(self, key: Text) -> float:
     """Gets a custom property of float type."""
     if key not in self._artifact.custom_properties:
       return 0.0
@@ -611,7 +616,7 @@ class Artifact(json_utils.Jsonable):
     return self._artifact.custom_properties[key].double_value
 
   @doc_controls.do_not_doc_inheritable
-  def get_json_value_custom_property(self, key: str) -> JsonValueType:
+  def get_json_value_custom_property(self, key: Text) -> JsonValueType:
     """Get a custom property of int type."""
     if key in self._cached_json_value_custom_properties:
       return self._cached_json_value_custom_properties[key]
@@ -644,7 +649,7 @@ class Artifact(json_utils.Jsonable):
 
 def _ArtifactType(  # pylint: disable=invalid-name
     name: Optional[str] = None,
-    properties: Optional[Dict[str, Property]] = None,
+    properties: Optional[Dict[Text, Property]] = None,
     mlmd_artifact_type: Optional[metadata_store_pb2.ArtifactType] = None
 ) -> Type[Artifact]:
   """Experimental interface: internal use only.

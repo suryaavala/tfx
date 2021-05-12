@@ -1,3 +1,4 @@
+# Lint as: python2, python3
 # Copyright 2020 Google LLC. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,13 +14,17 @@
 # limitations under the License.
 """Tests for tfx.utils.topsort."""
 
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+
 import attr
 import tensorflow as tf
 from tfx.utils import topsort
 
 
 @attr.s
-class Node:
+class Node(object):
   name = attr.ib()
   upstream_nodes = attr.ib()
   downstream_nodes = attr.ib()
@@ -56,7 +61,7 @@ class TopsortTest(tf.test.TestCase):
         Node('E', ['A'], [])
     ]
     node_map = {node.name: node for node in nodes}
-    with self.assertRaisesRegex(topsort.InvalidDAGError, 'Cycle detected.'):
+    with self.assertRaisesRegexp(topsort.InvalidDAGError, 'Cycle detected.'):
       topsort.topsorted_layers(
           nodes,
           get_node_id_fn=lambda n: n.name,

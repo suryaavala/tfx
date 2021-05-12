@@ -34,6 +34,7 @@ from tfx.orchestration.portable import python_driver_operator
 from tfx.orchestration.portable import python_executor_operator
 from tfx.orchestration.portable import resolver_node_handler
 from tfx.orchestration.portable.mlmd import context_lib
+from tfx.orchestration.portable.mlmd import execution_lib
 from tfx.proto.orchestration import driver_output_pb2
 from tfx.proto.orchestration import executable_spec_pb2
 from tfx.proto.orchestration import execution_result_pb2
@@ -189,13 +190,17 @@ class Launcher(object):
         self._system_node_handler
     ), 'A node must be system node or have an executor.'
 
-  def _register_execution(
+  def _register_or_reuse_execution(
       self, metadata_handler: metadata.Metadata,
       contexts: List[metadata_store_pb2.Context],
       input_artifacts: MutableMapping[str, Sequence[types.Artifact]],
       exec_properties: Mapping[str, types.Property]
   ) -> metadata_store_pb2.Execution:
-    """Registers an execution in MLMD."""
+    """Registers or reuses an execution in MLMD."""
+    executions = execution_lib.get_executions_associated_with_all_contexts(
+        metadata_handler, contexts)
+    if executions:
+      return executions.pop()
     return execution_publish_utils.register_execution(
         metadata_handler=metadata_handler,
         execution_type=self._pipeline_node.node_info.type,
@@ -229,8 +234,8 @@ class Launcher(object):
             contexts=contexts,
             is_execution_needed=False)
 
-      # 4. Registers execution in metadata.
-      execution = self._register_execution(
+      # 4. Registers or reuses execution in metadata.
+      execution = self._register_or_reuse_execution(
           metadata_handler=m,
           contexts=contexts,
           input_artifacts=input_artifacts,

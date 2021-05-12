@@ -1,3 +1,4 @@
+# Lint as: python2, python3
 # Copyright 2019 Google LLC. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,15 +14,19 @@
 # limitations under the License.
 """Utils for TFX-specific logger."""
 
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+
 import copy
 import logging
 import os
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Text
 
 from tfx.dsl.io import fileio
 
 
-class LoggerConfig:
+class LoggerConfig(object):
   """Logger configuration class.
 
   Logger configuration consists of:
@@ -32,16 +37,16 @@ class LoggerConfig:
   """
 
   def __init__(self,
-               log_root: Optional[str] = '/var/tmp/tfx/logs',
+               log_root: Optional[Text] = '/var/tmp/tfx/logs',
                log_level: Optional[int] = logging.INFO,
-               pipeline_name: Optional[str] = '',
-               worker_name: Optional[str] = ''):
+               pipeline_name: Optional[Text] = '',
+               worker_name: Optional[Text] = ''):
     self.log_root = log_root
     self.log_level = log_level
     self.pipeline_name = pipeline_name
     self.worker_name = worker_name
 
-  def update(self, config: Optional[Dict[str, Any]] = None):
+  def update(self, config: Optional[Dict[Text, Any]] = None):
     """Updates the log config parameters via elements in a dict.
 
     Args:

@@ -1,3 +1,4 @@
+# Lint as: python2, python3
 # Copyright 2019 Google LLC. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,13 +13,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Utilities for Python dependency and package management."""
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 
 import os
 import shutil
 import subprocess
 import sys
 import tempfile
-from typing import List
+from typing import List, Text
 
 import absl
 
@@ -29,7 +33,7 @@ from tfx.dsl.io import fileio
 from tfx.utils import io_utils
 
 
-def make_beam_dependency_flags(beam_pipeline_args: List[str]) -> List[str]:
+def make_beam_dependency_flags(beam_pipeline_args: List[Text]) -> List[Text]:
   """Make beam arguments for TFX python dependencies, if latter was not set.
 
   When TFX executors are used with non-local beam runners (Dataflow, Flink, etc)
@@ -85,7 +89,7 @@ if __name__ == '__main__':
 """
 
 
-def build_ephemeral_package() -> str:
+def build_ephemeral_package() -> Text:
   """Repackage current installation of TFX into a tfx_ephemeral sdist.
 
   Returns:

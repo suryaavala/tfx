@@ -1,3 +1,4 @@
+# Lint as: python2, python3
 # Copyright 2019 Google LLC. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,7 +14,11 @@
 # limitations under the License.
 """ComponentSpec for defining inputs/outputs/properties of TFX components."""
 
-from typing import Dict, Optional
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+
+from typing import Dict, Optional, Text
 
 from tfx.types.channel import Channel
 from tfx.utils import json_utils
@@ -29,8 +34,8 @@ class _PropertyDictWrapper(json_utils.Jsonable):
   """
 
   def __init__(self,
-               data: Dict[str, Channel],
-               compat_aliases: Optional[Dict[str, str]] = None):
+               data: Dict[Text, Channel],
+               compat_aliases: Optional[Dict[Text, Text]] = None):
     self._data = data
     self._compat_aliases = compat_aliases or {}
 
@@ -53,7 +58,7 @@ class _PropertyDictWrapper(json_utils.Jsonable):
   def __repr__(self):
     return repr(self._data)
 
-  def get_all(self) -> Dict[str, Channel]:
+  def get_all(self) -> Dict[Text, Channel]:
     return self._data
 
   def keys(self):

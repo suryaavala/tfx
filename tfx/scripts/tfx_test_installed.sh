@@ -34,6 +34,9 @@
 #  $ cat tfx/scripts/tfx_test_installed.sh | docker run --rm -e 'INSTALL_TFX_VERSION=0.28.0' -i gcr.io/deeplearning-platform-release/tf2-cpu.2-4  bash -c 'source /dev/stdin'
 #
 
+MAX_TFX_SUPPORTED_TF_VERSION="2.4"
+
+
 set -ex
 
 PYTHON_BINARY=$(which python)
@@ -43,6 +46,15 @@ if [[ -n "${INSTALL_TFX_VERSION}" ]]; then
 fi
 
 TENSORFLOW_VERSION=$(${PYTHON_BINARY} -c 'import tensorflow; print(tensorflow.__version__)')
+
+python -c 'import tfx' || TFX_NOT_INSTALLED=1
+tf_version_arr=(${TENSORFLOW_VERSION//./ })
+max_tf_version_arr=(${MAX_TFX_SUPPORTED_TF_VERSION//./ })
+if [[ -n "${TFX_NOT_INSTALLED}" && ${tf_version_arr[0]} == ${max_tf_version_arr[0]} && ${tf_version_arr[1]} -le ${max_tf_version_arr[1]} ]]; then
+    echo "TFX should be installed with TF==${TENSORFLOW_VERSION} but missing."
+    exit 1
+fi
+
 TFX_VERSION=$(${PYTHON_BINARY} -c 'from tfx import version; print(version.__version__)')
 
 rm -rf tfx
